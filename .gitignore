@@ -1,0 +1,28 @@
+# Virtual Environment
+.venv/
+env/
+ENV/
+
+# Python Cache & Build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# IDEs
+.idea/
+.vscode/
+
+# Binary & Disassembly artifacts (nicht ins Git)
+*.asm
+*.exe
+*.dll
+*.bin
+*.log
+
+# OS
+Thumbs.db
+Desktop.ini
