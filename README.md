@@ -1,109 +1,48 @@
-```markdown
-# PEBuilder 🛠️
+# PEBuilder
 
-> **Standalone Bit-Perfect Portable Executable (PE) Disassembler & Reassembler Toolchain**
+PEBuilder is a Python toolkit for inspecting, disassembling and rebuilding Windows Portable Executable (PE) files. The project contains PE structure handling, assembly/disassembly helpers, directory support and binary comparison utilities.
 
-`pebuilder` is a Python framework designed to disassemble Windows PE binaries (`.exe` / `.dll` for 32-bit x86 and 64-bit x64), represent every section and metadata field in a human-readable `.asm` file, and reassemble it back into a **100% bit-perfect, bootable PE executable** — without needing the original binary at build time.
+> **Status: active experimental tooling.** Feature coverage and round-trip fidelity depend on the input binary and the implemented PE directory handlers. Treat byte-identical reconstruction as a per-fixture test result, not a universal guarantee.
 
----
+## Capabilities represented in the codebase
 
-## ✨ Features
+- PE parsing and section metadata handling.
+- x86/x64 disassembly and assembly integration through Capstone and Keystone.
+- Helpers for imports, exports, relocations, resources, TLS and other PE metadata.
+- Reassembly, overlays and binary/section comparison utilities.
 
-* **Bit-Perfect 1:1 Reconstruction**  
-  Achieves 100.0000% byte-for-byte exact PE binary reconstruction (verified on 30MB+ commercial DirectX 11 executables).
+Not every PE feature is necessarily supported for every architecture, linker, compiler or executable. Unsupported and malformed inputs should fail clearly rather than produce a misleading success result.
 
-* **Standalone Pipeline**  
-  Disassembles PE binaries into self-contained `.asm` listings containing all required PE headers, metadata, section flags, data directories, DOS stubs, and overlays.
+## Installation
 
-* **Multi-Section Support**  
-  Preserves `.text`, `.rdata`, `.data`, `.pdata`, `.tls`, `.rsrc`, `.reloc`, and custom sections with exact VirtualSizes and characteristics.
+Python 3.10+ is recommended. Create a virtual environment and install dependencies:
 
-* **PE Directory Preservation**  
-  Maintains all 15 Data Directories (Imports, Exports, Resources, Exception Handling, Security/Signatures, TLS, LoadConfig, IAT, Debug, etc.).
-
-* **x86 & x64 Architecture Support**  
-  Powered by the Capstone Disassembler and Keystone Engine Assembler backends.
-
-* **Overlay & DOS Stub Preservation**  
-  Fully preserves digital signatures, overlays, and custom MSVC Rich Headers / DOS stubs.
-
----
-
-## ⚙️ Installation
-
-1. Activate your Python virtual environment:
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-
-2. Install the required dependencies:
-   ```powershell
-   pip install capstone keystone-engine
-   ```
-
-3. Install `pebuilder` in editable mode:
-   ```powershell
-   pip install -e .
-   ```
-
----
-
-## 🚀 Quick Start
-
-### Step 1: Disassemble a Binary
-Disassemble any `.exe` or `.dll` into a standalone `.asm` file:
-```powershell
-python .\pebuilder\disassemble.py C:\path\to\target.exe -o target.asm
+```bash
+python -m venv .venv
+# Windows: .venv\\Scripts\\activate
+# Linux/macOS: source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install capstone keystone-engine
+python -m pip install -e .
 ```
 
-### Step 2: Reassemble into an Executable
-Rebuild a bootable, bit-perfect executable directly from the `.asm` file (no original binary required):
-```powershell
-python -m pebuilder.reassembler --disasm target.asm --output target_rebuilt.exe
-```
+Confirm the package metadata and CLI entry points in the current checkout before relying on commands below; interfaces may evolve while the project is experimental.
 
-### Step 3: Verify 1:1 Equivalence
-Compare the original binary with the rebuilt binary byte-by-byte:
-```powershell
-python -c "b1=open(r'C:\path\to\target.exe','rb').read(); b2=open('target_rebuilt.exe','rb').read(); diff=sum(1 for x,y in zip(b1,b2) if x!=y); print(f'Byte Differences: {diff} / {len(b1)} (Match: {(len(b1)-diff)/len(b1)*100:.6f}%)')"
-```
+## Validation principles
 
----
+A successful parse or reassembly is not proof of semantic equivalence or executability. For each supported fixture, record:
+- PE architecture, section layout and data directories.
+- Whether output parses with an independent PE parser.
+- Byte-level equality, including file length and overlay.
+- Which directories are preserved, rebuilt or intentionally unsupported.
+- Whether signatures are invalidated by modification.
 
-## 📂 Project Structure
+Authenticode signatures generally cannot remain valid after binary modifications. Do not describe signed-file preservation unless verified separately.
 
-```text
-pebuilder/
-├── pebuilder/
-│   ├── __init__.py         # Package initialization
-│   ├── pe.py               # Low-level PE structures & NT header packing
-│   ├── builder.py          # PE Builder engine
-│   ├── linker.py           # PE Linker & Data Directory collector
-│   ├── sections.py         # PESection & SectionTable alignment managers
-│   ├── assembler.py        # Keystone assembler backend & listing parser
-│   ├── disassemble.py      # Capstone disassembler & PE metadata exporter
-│   ├── reassembler.py      # Standalone CLI reassembler
-│   ├── compare.py          # PE Section comparison utility
-│   ├── check_pe.py         # PE Header & Directory diagnostic tool
-│   ├── find_diffs.py       # Byte-level difference analyzer
-│   ├── fix_overlay.py      # Overlay & signature helper
-│   ├── overlay.py          # PE Overlay handler
-│   ├── resources.py        # Resource section handler
-│   ├── imports.py          # Import Directory builder
-│   ├── exports.py          # Export Directory builder
-│   ├── reloc.py            # Relocation Directory builder
-│   ├── tls.py              # TLS Directory handler
-│   ├── pdata.py            # x64 Unwind Info builder
-│   ├── debug.py            # Debug Directory handler
-│   └── loadconfig.py       # Load Config Directory handler
-├── .gitignore              # Git ignore configuration
-├── README.md               # Project documentation
-└── setup.py                # Package setup script
-```
+## Roadmap
 
----
+See [docs/ROADMAP.md](docs/ROADMAP.md) for phased work, acceptance criteria and a provisional schedule.
 
-## 🔒 License
+## Safety and licensing
 
-Private Repository. All rights reserved.
-```
+Only analyze binaries you are legally entitled to inspect. Do not commit proprietary executables, DLLs, extracted payloads, private test samples or generated binary blobs. Keep test inputs outside version control or use redistributable fixtures. Review the license and provenance of every dependency and contributed file before release.
